@@ -25,6 +25,22 @@ const GAME_CONSTANTS = {
   MAX_HIGH_SCORES: 3,
 };
 
+const useDebounce = (callback, delay) => {
+  const timeoutRef = React.useRef(null);
+
+  return React.useCallback(
+    (...args) => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      timeoutRef.current = setTimeout(() => {
+        callback(...args);
+      }, delay);
+    },
+    [callback, delay]
+  );
+};
+
 function App() {
   const [playerPosition, setPlayerPosition] = useState(50);
   const [playerFacingLeft, setPlayerFacingLeft] = useState(false);
@@ -52,6 +68,14 @@ function App() {
     left: null,
     right: null,
   });
+
+  const debouncedSetLeft = useDebounce((interval) => {
+    setTouchIntervals((prev) => ({ ...prev, left: interval }));
+  }, 100);
+
+  const debouncedSetRight = useDebounce((interval) => {
+    setTouchIntervals((prev) => ({ ...prev, right: interval }));
+  }, 100);
 
   useEffect(() => {
     const handleKeyPress = (e) => {
@@ -257,7 +281,7 @@ function App() {
         onTouchStart={() => {
           movePlayer("left");
           const interval = setInterval(() => movePlayer("left"), 50);
-          setTouchIntervals((prev) => ({ ...prev, left: interval }));
+          debouncedSetLeft(interval);
         }}
         onTouchEnd={() => {
           if (touchIntervals.left) {
@@ -304,7 +328,7 @@ function App() {
         onTouchStart={() => {
           movePlayer("right");
           const interval = setInterval(() => movePlayer("right"), 50);
-          setTouchIntervals((prev) => ({ ...prev, right: interval }));
+          debouncedSetRight(interval);
         }}
         onTouchEnd={() => {
           if (touchIntervals.right) {
