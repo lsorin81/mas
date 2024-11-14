@@ -5,6 +5,8 @@ const appleImg = process.env.PUBLIC_URL + "/apple.webp";
 const bananaImg = process.env.PUBLIC_URL + "/banana.webp";
 const orangeImg = process.env.PUBLIC_URL + "/orange.webp";
 const pearImg = process.env.PUBLIC_URL + "/pear.webp";
+const playerLeftImg = process.env.PUBLIC_URL + "/left.png";
+const playerRightImg = process.env.PUBLIC_URL + "/right.png";
 
 export const fruitImages = {
   apple: appleImg,
@@ -21,22 +23,43 @@ const GAME_CONSTANTS = {
   COLLISION_THRESHOLD: 8,
   FRUIT_FALL_SPEED: 1,
   PLAYER_Y_POSITION: 85,
+  MAX_HIGH_SCORES: 3,
 };
 
 function App() {
   const [playerPosition, setPlayerPosition] = useState(50);
+  const [playerFacingLeft, setPlayerFacingLeft] = useState(false);
   const [fruits, setFruits] = useState([]);
   const [isGameOver, setIsGameOver] = useState(false);
   const [score, setScore] = useState(0);
   const [spawnInterval, setSpawnInterval] = useState(2000);
+  console.log("🚀 ~ App ~ spawnInterval:", spawnInterval);
+  const [highScores, setHighScores] = useState(() => {
+    const saved = localStorage.getItem("highScores");
+    if (!saved) return [];
+    try {
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed)
+        ? parsed.filter(
+            (score) => typeof score.score === "number" && !isNaN(score.score)
+          )
+        : [];
+    } catch {
+      return [];
+    }
+  });
+  const [playerName, setPlayerName] = useState("");
+  const [showNameInput, setShowNameInput] = useState(false);
 
   useEffect(() => {
     const handleKeyPress = (e) => {
       if (e.key === "ArrowLeft" && playerPosition > 0) {
         setPlayerPosition((prev) => prev - 5);
+        setPlayerFacingLeft(true);
       }
       if (e.key === "ArrowRight" && playerPosition < 95) {
         setPlayerPosition((prev) => prev + 5);
+        setPlayerFacingLeft(false);
       }
     };
 
@@ -54,7 +77,7 @@ function App() {
 
   useEffect(() => {
     if (score > 0 && score % 10 === 0) {
-      setSpawnInterval((prev) => Math.max(prev * 0.9, 500));
+      setSpawnInterval((prev) => Math.max(prev * 0.9, 100));
     }
   }, [score]);
 
@@ -105,20 +128,79 @@ function App() {
     });
   };
 
+  const updateHighScores = useCallback(
+    (newScore, name) => {
+      if (typeof newScore !== "number" || isNaN(newScore)) return;
+
+      const updatedScores = [...highScores, { name, score: newScore }]
+        .filter(
+          (score) => typeof score.score === "number" && !isNaN(score.score)
+        )
+        .sort((a, b) => b.score - a.score)
+        .slice(0, GAME_CONSTANTS.MAX_HIGH_SCORES);
+
+      setHighScores(updatedScores);
+      localStorage.setItem("highScores", JSON.stringify(updatedScores));
+    },
+    [highScores]
+  );
+
   if (isGameOver) {
+    const isHighScore =
+      score > (highScores[GAME_CONSTANTS.MAX_HIGH_SCORES - 1]?.score || 0);
+
     return (
       <div className="game-over">
         <h1>Game Over! Score: {score}</h1>
-        <button
-          onClick={() => {
-            setIsGameOver(false);
-            setScore(0);
-            setFruits([]);
-            setSpawnInterval(2000);
-          }}
-        >
-          Play Again
-        </button>
+        {isHighScore && !showNameInput && (
+          <div>
+            <h2>🎉 New High Score! 🎉</h2>
+            <input
+              type="text"
+              value={playerName}
+              onChange={(e) => setPlayerName(e.target.value)}
+              placeholder="Enter your name"
+              maxLength={20}
+            />
+            <button
+              onClick={() => {
+                if (playerName.trim()) {
+                  updateHighScores(score, playerName);
+                  setShowNameInput(false);
+                  setPlayerName("");
+                  setIsGameOver(false);
+                  setScore(0);
+                  setFruits([]);
+                  setSpawnInterval(GAME_CONSTANTS.INITIAL_SPAWN_INTERVAL);
+                }
+              }}
+            >
+              Save Score & Play Again
+            </button>
+          </div>
+        )}
+
+        <div className="high-scores">
+          <h2>High Scores</h2>
+          {highScores.map((s, i) => (
+            <div key={i}>
+              #{i + 1}: {s.name || "Anonymous"} - {s.score}s
+            </div>
+          ))}
+        </div>
+
+        {!isHighScore && (
+          <button
+            onClick={() => {
+              setIsGameOver(false);
+              setScore(0);
+              setFruits([]);
+              setSpawnInterval(GAME_CONSTANTS.INITIAL_SPAWN_INTERVAL);
+            }}
+          >
+            Play Again
+          </button>
+        )}
       </div>
     );
   }
@@ -126,6 +208,16 @@ function App() {
   return (
     <div className="game-container">
       <div className="score">Survived: {score}s</div>
+
+      {highScores.length >= 3 && (
+        <div className="in-game-high-scores">
+          {highScores.map((s, i) => (
+            <div key={i}>
+              #{i + 1}: {s.name} - {s.score}s
+            </div>
+          ))}
+        </div>
+      )}
 
       {fruits.map((fruit, index) => (
         <img
@@ -136,7 +228,12 @@ function App() {
           alt={fruit.type}
         />
       ))}
-      <div className="player" style={{ left: `${playerPosition}%` }} />
+      <img
+        src={playerFacingLeft ? playerLeftImg : playerRightImg}
+        className="player"
+        style={{ left: `${playerPosition}%` }}
+        alt="player"
+      />
     </div>
   );
 }
