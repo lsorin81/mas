@@ -55,12 +55,16 @@ function App() {
 
   useEffect(() => {
     const handleKeyPress = (e) => {
-      if (e.key === "ArrowLeft" && playerPosition > 0) {
-        setPlayerPosition((prev) => prev - 5);
+      if (e.key === "ArrowLeft") {
+        setPlayerPosition((prev) =>
+          Math.max(0, prev - GAME_CONSTANTS.PLAYER_STEP)
+        );
         setPlayerFacingLeft(true);
       }
-      if (e.key === "ArrowRight" && playerPosition < 95) {
-        setPlayerPosition((prev) => prev + 5);
+      if (e.key === "ArrowRight") {
+        setPlayerPosition((prev) =>
+          Math.min(95, prev + GAME_CONSTANTS.PLAYER_STEP)
+        );
         setPlayerFacingLeft(false);
       }
     };
@@ -148,11 +152,15 @@ function App() {
   );
 
   const movePlayer = (direction) => {
-    if (direction === "left" && playerPosition > 0) {
-      setPlayerPosition((prev) => prev - GAME_CONSTANTS.PLAYER_STEP);
+    if (direction === "left") {
+      setPlayerPosition((prev) =>
+        Math.max(0, prev - GAME_CONSTANTS.PLAYER_STEP)
+      );
       setPlayerFacingLeft(true);
-    } else if (direction === "right" && playerPosition < 95) {
-      setPlayerPosition((prev) => prev + GAME_CONSTANTS.PLAYER_STEP);
+    } else if (direction === "right") {
+      setPlayerPosition((prev) =>
+        Math.min(95, prev + GAME_CONSTANTS.PLAYER_STEP)
+      );
       setPlayerFacingLeft(false);
     }
   };
@@ -233,6 +241,19 @@ function App() {
 
       <button
         className="control-button left-button"
+        style={{
+          position: "absolute",
+          left: "20px",
+          bottom: "20px",
+          zIndex: 1000,
+          fontSize: "24px",
+          padding: "15px 25px",
+          opacity: 0.7,
+          backgroundColor: "#333",
+          color: "white",
+          border: "none",
+          borderRadius: "8px",
+        }}
         onTouchStart={() => {
           movePlayer("left");
           const interval = setInterval(() => movePlayer("left"), 50);
@@ -267,6 +288,19 @@ function App() {
 
       <button
         className="control-button right-button"
+        style={{
+          position: "absolute",
+          right: "20px",
+          bottom: "20px",
+          zIndex: 1000,
+          fontSize: "24px",
+          padding: "15px 25px",
+          opacity: 0.7,
+          backgroundColor: "#333",
+          color: "white",
+          border: "none",
+          borderRadius: "8px",
+        }}
         onTouchStart={() => {
           movePlayer("right");
           const interval = setInterval(() => movePlayer("right"), 50);
