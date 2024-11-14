@@ -17,9 +17,8 @@ export const fruitImages = {
 
 const GAME_CONSTANTS = {
   PLAYER_STEP: 5,
-  PLAYER_BOUNDS: { MIN: 0, MAX: 95 },
   FRUIT_TYPES: ["apple", "banana", "orange", "pear"],
-  INITIAL_SPAWN_INTERVAL: 2000,
+  INITIAL_SPAWN_INTERVAL: 1000,
   COLLISION_THRESHOLD: 8,
   FRUIT_FALL_SPEED: 1,
   PLAYER_Y_POSITION: 85,
@@ -33,7 +32,6 @@ function App() {
   const [isGameOver, setIsGameOver] = useState(false);
   const [score, setScore] = useState(0);
   const [spawnInterval, setSpawnInterval] = useState(2000);
-  console.log("🚀 ~ App ~ spawnInterval:", spawnInterval);
   const [highScores, setHighScores] = useState(() => {
     const saved = localStorage.getItem("highScores");
     if (!saved) return [];
@@ -50,6 +48,10 @@ function App() {
   });
   const [playerName, setPlayerName] = useState("");
   const [showNameInput, setShowNameInput] = useState(false);
+  const [touchIntervals, setTouchIntervals] = useState({
+    left: null,
+    right: null,
+  });
 
   useEffect(() => {
     const handleKeyPress = (e) => {
@@ -145,6 +147,16 @@ function App() {
     [highScores]
   );
 
+  const movePlayer = (direction) => {
+    if (direction === "left" && playerPosition > 0) {
+      setPlayerPosition((prev) => prev - GAME_CONSTANTS.PLAYER_STEP);
+      setPlayerFacingLeft(true);
+    } else if (direction === "right" && playerPosition < 95) {
+      setPlayerPosition((prev) => prev + GAME_CONSTANTS.PLAYER_STEP);
+      setPlayerFacingLeft(false);
+    }
+  };
+
   if (isGameOver) {
     const isHighScore =
       score > (highScores[GAME_CONSTANTS.MAX_HIGH_SCORES - 1]?.score || 0);
@@ -218,6 +230,74 @@ function App() {
           ))}
         </div>
       )}
+
+      <button
+        className="control-button left-button"
+        onTouchStart={() => {
+          movePlayer("left");
+          const interval = setInterval(() => movePlayer("left"), 50);
+          setTouchIntervals((prev) => ({ ...prev, left: interval }));
+        }}
+        onTouchEnd={() => {
+          if (touchIntervals.left) {
+            clearInterval(touchIntervals.left);
+            setTouchIntervals((prev) => ({ ...prev, left: null }));
+          }
+        }}
+        onMouseDown={() => {
+          movePlayer("left");
+          const interval = setInterval(() => movePlayer("left"), 50);
+          setTouchIntervals((prev) => ({ ...prev, left: interval }));
+        }}
+        onMouseUp={() => {
+          if (touchIntervals.left) {
+            clearInterval(touchIntervals.left);
+            setTouchIntervals((prev) => ({ ...prev, left: null }));
+          }
+        }}
+        onMouseLeave={() => {
+          if (touchIntervals.left) {
+            clearInterval(touchIntervals.left);
+            setTouchIntervals((prev) => ({ ...prev, left: null }));
+          }
+        }}
+      >
+        ←
+      </button>
+
+      <button
+        className="control-button right-button"
+        onTouchStart={() => {
+          movePlayer("right");
+          const interval = setInterval(() => movePlayer("right"), 50);
+          setTouchIntervals((prev) => ({ ...prev, right: interval }));
+        }}
+        onTouchEnd={() => {
+          if (touchIntervals.right) {
+            clearInterval(touchIntervals.right);
+            setTouchIntervals((prev) => ({ ...prev, right: null }));
+          }
+        }}
+        onMouseDown={() => {
+          movePlayer("right");
+          const interval = setInterval(() => movePlayer("right"), 50);
+          setTouchIntervals((prev) => ({ ...prev, right: interval }));
+        }}
+        onMouseUp={() => {
+          if (touchIntervals.right) {
+            clearInterval(touchIntervals.right);
+            setTouchIntervals((prev) => ({ ...prev, right: null }));
+          }
+        }}
+        onMouseLeave={() => {
+          if (touchIntervals.right) {
+            clearInterval(touchIntervals.right);
+            setTouchIntervals((prev) => ({ ...prev, right: null }));
+          }
+        }}
+      >
+        →
+      </button>
 
       {fruits.map((fruit, index) => (
         <img
